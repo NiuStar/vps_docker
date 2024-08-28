@@ -9,6 +9,7 @@ echo "安装docker"
 
  echo "下载文件"
 wget https://github.com/NiuStar/vps_docker/raw/main/docker.zip
+apt install unzip
 unzip docker.zip
  
 cd docker/x-ui && docker-compose up -d
