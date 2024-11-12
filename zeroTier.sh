@@ -83,6 +83,9 @@ join_zerotier_network
 verify_network_join
 configure_startup
 
+systemctl start zerotier-one
+systemctl enable zerotier-one
+
 # 输出分配的IP地址
 zerotier-cli listnetworks
 
