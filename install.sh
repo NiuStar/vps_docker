@@ -49,4 +49,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-chmod +x ../sshport.sh && ../sshport.sh
+chmod +x sshport.sh && sshport.sh
+
+wget $IP_FLAG -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
