@@ -2,7 +2,6 @@
 
 # ZeroTier自动安装和配置脚本
 # 适用于Debian/Ubuntu和CentOS系统的自动安装脚本
-# 适用于各个服务器上的通用脚本，便于自动化安装和加入网络
 
 # 获取ZeroTier网络ID
 if [ -z "$1" ]; then
@@ -39,6 +38,26 @@ install_zerotier() {
     esac
 }
 
+# 检查是否支持IPv6
+check_ipv6_support() {
+    if ping6 -c 1 -W 1 ipv6.google.com &>/dev/null; then
+        echo "IPv6支持正常。"
+        CONTROLLER_ADDRESS="[240e:0974:eb00:0908:0000:0000:5064:007d]:19993"
+    else
+        echo "IPv6不可用。使用IPv4地址。"
+        CONTROLLER_ADDRESS="110.40.75.160:19993"
+    fi
+
+    # 写入配置文件
+    CONFIG_FILE="/var/lib/zerotier-one/local.conf"
+    sudo mkdir -p $(dirname "$CONFIG_FILE")
+    echo "{
+    \"settings\": {
+        \"controllerAddress\": \"$CONTROLLER_ADDRESS\"
+    }
+}" | sudo tee "$CONFIG_FILE" > /dev/null
+}
+
 # 加入ZeroTier网络
 join_zerotier_network() {
     echo "加入ZeroTier网络: $ZEROTIER_NETWORK_ID"
@@ -47,8 +66,7 @@ join_zerotier_network() {
 
 # 验证ZeroTier安装状态
 verify_installation() {
-    if ! command -v zerotier-cli &> /dev/null
-    then
+    if ! command -v zerotier-cli &> /dev/null; then
         echo "ZeroTier未成功安装，请检查安装过程。"
         exit 1
     fi
@@ -70,7 +88,7 @@ verify_network_join() {
 # 设置系统启动后自动加入ZeroTier网络
 configure_startup() {
     echo "配置系统重启后自动加入ZeroTier网络..."
-    crontab -l > mycron
+    crontab -l > mycron 2>/dev/null
     echo "@reboot /usr/sbin/zerotier-one & sleep 10 && sudo zerotier-cli join $ZEROTIER_NETWORK_ID" >> mycron
     crontab mycron
     rm mycron
@@ -79,6 +97,7 @@ configure_startup() {
 # 执行安装和配置步骤
 install_zerotier
 verify_installation
+check_ipv6_support
 join_zerotier_network
 verify_network_join
 configure_startup
