@@ -20,14 +20,15 @@ done
 
 # 获取最新版本号和下载链接
 echo "Fetching latest GOST release information..."
-LATEST_TAG=$(curl -sL "$RELEASE_URL" | grep -oP '(?<=tag/)[^"]+'| head -n 1 | sed 's/^v//')
+LATEST_TAG=$(curl -sL "$RELEASE_URL" | grep -oP '(?<=tag/)[^"]+'| head -n 1)
+LATEST_TAG2=$(echo $LATEST_TAG | sed 's/^v//')
 if [[ -z "$LATEST_TAG" ]]; then
   echo "Failed to fetch the latest GOST version." >&2
   exit 1
 fi
 
 # 构造下载链接
-ARCHIVE_NAME="gost_${LATEST_TAG}_linux_amd64.tar.gz"
+ARCHIVE_NAME="gost_${LATEST_TAG2}_linux_amd64.tar.gz"
 DOWNLOAD_URL="https://github.com/go-gost/gost/releases/download/${LATEST_TAG}/${ARCHIVE_NAME}"
 echo "Latest version: $LATEST_TAG"
 echo "Download URL: $DOWNLOAD_URL"
