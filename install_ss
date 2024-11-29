@@ -1,11 +1,12 @@
 #!/bin/bash
 
+apt install jq
 # 默认值
 DEFAULT_PORT=20080
 DEFAULT_PASSWORD="12345678"
-RELEASE_URL="https://github.com/go-gost/gost/releases/latest"
 BIN_PATH="/usr/bin/gost"
 SERVICE_PATH="/etc/systemd/system/gost.service"
+GITHUB_API_URL="https://api.github.com/repos/go-gost/gost/releases/latest"
 
 # 获取端口号和密码
 PORT=$DEFAULT_PORT
@@ -18,23 +19,23 @@ while getopts "p:w:" opt; do
   esac
 done
 
-# 获取最新版本号
+# 获取最新版本号和下载链接
 echo "Fetching latest GOST release information..."
-LATEST_TAG=$(curl -sL "$RELEASE_URL" | grep -oP '(?<=tag/)[^"]+' | head -n 1)
-if [[ -z "$LATEST_TAG" ]]; then
-  echo "Failed to fetch the latest GOST version." >&2
+LATEST_RELEASE=$(curl -sL "$GITHUB_API_URL")
+LATEST_TAG=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
+DOWNLOAD_URL=$(echo "$LATEST_RELEASE" | jq -r '.assets[] | select(.name | test("linux_amd64")) | .browser_download_url')
+
+if [[ -z "$LATEST_TAG" || -z "$DOWNLOAD_URL" ]]; then
+  echo "Failed to fetch the latest GOST version or download URL." >&2
   exit 1
 fi
 
-# 构造下载链接
-ARCHIVE_NAME="gost_${LATEST_TAG}_linux_amd64.tar.gz"
-DOWNLOAD_URL="https://github.com/go-gost/gost/releases/download/${LATEST_TAG}/${ARCHIVE_NAME}"
 echo "Latest version: $LATEST_TAG"
 echo "Download URL: $DOWNLOAD_URL"
 
 # 下载文件
 echo "Downloading GOST binary..."
-curl -L -o "$ARCHIVE_NAME" "$DOWNLOAD_URL"
+curl -L -o "gost_${LATEST_TAG}_linux_amd64.tar.gz" "$DOWNLOAD_URL"
 if [[ $? -ne 0 ]]; then
   echo "Failed to download GOST binary." >&2
   exit 1
@@ -42,10 +43,10 @@ fi
 
 # 解压文件
 echo "Extracting GOST binary..."
-tar -xzvf "$ARCHIVE_NAME" gost
+tar -xzvf "gost_${LATEST_TAG}_linux_amd64.tar.gz" gost
 if [[ $? -ne 0 ]]; then
   echo "Failed to extract GOST binary." >&2
-  rm -f "$ARCHIVE_NAME"
+  rm -f "gost_${LATEST_TAG}_linux_amd64.tar.gz"
   exit 1
 fi
 
@@ -90,5 +91,5 @@ else
 fi
 
 # 清理下载文件
-rm -f "$ARCHIVE_NAME"
+rm -f "gost_${LATEST_TAG}_linux_amd64.tar.gz"
 echo "Installation completed successfully."
