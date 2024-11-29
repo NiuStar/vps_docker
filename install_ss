@@ -18,6 +18,18 @@ while getopts "p:w:" opt; do
   esac
 done
 
+# 如果没有提供端口或密码，则提示用户输入
+if [[ -z "$PORT" ]]; then
+  read -p "Enter the port (default $DEFAULT_PORT): " PORT
+  PORT=${PORT:-$DEFAULT_PORT}
+fi
+
+if [[ -z "$PASSWORD" ]]; then
+  read -sp "Enter the password (default $DEFAULT_PASSWORD): " PASSWORD
+  echo
+  PASSWORD=${PASSWORD:-$DEFAULT_PASSWORD}
+fi
+
 # 获取最新版本号和下载链接
 echo "Fetching latest GOST release information..."
 LATEST_TAG=$(curl -sL "$RELEASE_URL" | grep -oP '(?<=tag/)[^"]+'| head -n 1)
