@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# 默认值
+DEFAULT_PORT=20080
+DEFAULT_PASSWORD="12345678"
+RELEASE_URL="https://github.com/go-gost/gost/releases/latest"
+BIN_PATH="/usr/bin/gost"
+SERVICE_PATH="/etc/systemd/system/gost.service"
+
+# 获取端口号和密码
+PORT=$DEFAULT_PORT
+PASSWORD=$DEFAULT_PASSWORD
+while getopts "p:w:" opt; do
+  case $opt in
+    p) PORT=$OPTARG ;;
+    w) PASSWORD=$OPTARG ;;
+    *) echo "Usage: $0 [-p port] [-w password]" && exit 1 ;;
+  esac
+done
+
+# 获取最新版本号和下载链接
+echo "Fetching latest GOST release information..."
+LATEST_TAG=$(curl -sL "$RELEASE_URL" | grep -oP '(?<=tag/)[^"]+')
+if [[ -z "$LATEST_TAG" ]]; then
+  echo "Failed to fetch the latest GOST version." >&2
+  exit 1
+fi
+
+# 构造下载链接
+ARCHIVE_NAME="gost_${LATEST_TAG}_linux_amd64.tar.gz"
+DOWNLOAD_URL="https://github.com/go-gost/gost/releases/download/${LATEST_TAG}/${ARCHIVE_NAME}"
+echo "Latest version: $LATEST_TAG"
+echo "Download URL: $DOWNLOAD_URL"
+
+# 下载文件
+echo "Downloading GOST binary..."
+curl -L -o "$ARCHIVE_NAME" "$DOWNLOAD_URL"
+if [[ $? -ne 0 ]]; then
+  echo "Failed to download GOST binary." >&2
+  exit 1
+fi
+
+# 解压文件
+echo "Extracting GOST binary..."
+tar -xzvf "$ARCHIVE_NAME" gost
+if [[ $? -ne 0 ]]; then
+  echo "Failed to extract GOST binary." >&2
+  rm -f "$ARCHIVE_NAME"
+  exit 1
+fi
+
+# 移动文件到 /usr/bin 并设置权限
+echo "Installing GOST binary to $BIN_PATH..."
+mv gost "$BIN_PATH"
+chmod +x "$BIN_PATH"
+if [[ $? -ne 0 ]]; then
+  echo "Failed to install GOST binary." >&2
+  exit 1
+fi
+
+# 创建 systemd 服务文件
+echo "Creating systemd service file..."
+cat <<EOL > "$SERVICE_PATH"
+[Unit]
+Description=GOST SERVER
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=$BIN_PATH -L "ss://chacha20-ietf-poly1305:$PASSWORD@$PORT"
+Restart=on-failure
+RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+# 重新加载 systemd，启动服务并设置自启动
+echo "Configuring GOST service..."
+systemctl daemon-reload
+systemctl enable gost.service
+systemctl start gost.service
+
+# 检查服务状态
+if systemctl is-active --quiet gost.service; then
+  echo "GOST service is running on port $PORT with password '$PASSWORD'."
+else
+  echo "Failed to start GOST service." >&2
+  exit 1
+fi
+
+# 清理下载文件
+rm -f "$ARCHIVE_NAME"
+echo "Installation completed successfully."
