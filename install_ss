@@ -20,7 +20,7 @@ done
 
 # 获取最新版本号和下载链接
 echo "Fetching latest GOST release information..."
-LATEST_TAG=$(curl -sL "$RELEASE_URL" | grep -oP '(?<=tag/)[^"]+'| head -n 1)
+LATEST_TAG=$(curl -sL "$RELEASE_URL" | grep -oP '(?<=tag/)[^"]+'| head -n 1 | sed 's/^v//')
 if [[ -z "$LATEST_TAG" ]]; then
   echo "Failed to fetch the latest GOST version." >&2
   exit 1
