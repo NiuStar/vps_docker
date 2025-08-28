@@ -10,7 +10,7 @@ fix-ssh-root.sh [选项]
 ```
 示例：
 ```bash
-  wget -o fix-ssh-root.sh https://raw.githubusercontent.com/NiuStar/vps_docker/refs/heads/main/fis-ssh-root.sh & chmod +x ./fis-ssh-root.sh & bash fis-ssh-root.sh --allow-password
+  wget -o fix-ssh-root.sh https://raw.githubusercontent.com/NiuStar/vps_docker/refs/heads/main/fix-ssh-root.sh & chmod +x ./fix-ssh-root.sh & bash fix-ssh-root.sh --allow-password
 ```
 其他用法
 ```
