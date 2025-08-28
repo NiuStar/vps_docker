@@ -7,6 +7,8 @@
   -h, --help                 显示帮助
 
 示例：
+```bash
   sudo bash fix-ssh-root.sh --pubkey "ssh-ed25519 AAAAC3... user@host"
   sudo bash fix-ssh-root.sh --allow-password --pubkey-file ~/.ssh/id_ed25519.pub
   sudo bash fix-ssh-root.sh --allow-password --set-root-password
+```
